@@ -1,6 +1,7 @@
 export interface Order {
   id: string;
   userId: string;
+  orderNumber: string;
   customerName: string;
   customerPhone: string;
   customerAddress: string;
@@ -9,11 +10,29 @@ export interface Order {
     productName: string;
     quantity: number;
     price: number;
+    coverImage: string;
+    variantDetails?: string;
   }[];
+  subtotal: number;
+  shippingCost: number;
+  discount: number;
+  total: number;
   totalAmount: number;
-  paymentMethod: 'cash' | 'mobile';
+  paymentMethod: 'cash' | 'card';
   paymentStatus: 'pending' | 'paid' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
   orderStatus: 'pending' | 'confirmed' | 'delivered' | 'cancelled';
+  shippingMethod: string;
+  shippingInfo: {
+    fullName: string;
+    email: string;
+    phone: string;
+    address?: string;
+    city?: string;
+    postalCode?: string;
+    notes?: string;
+  };
+  couponCode?: string;
   createdAt: string;
   notes?: string;
 }
@@ -23,6 +42,7 @@ export const mockOrders: Order[] = [
   {
     id: 'order-1',
     userId: 'client-1',
+    orderNumber: 'SW2024001',
     customerName: 'Client Test',
     customerPhone: '+221 77 123 45 67',
     customerAddress: 'Dakar, Plateau',
@@ -32,33 +52,28 @@ export const mockOrders: Order[] = [
         productName: 'Smartphone Samsung Galaxy A54',
         quantity: 1,
         price: 185000,
+        coverImage: '/images/Smartphone.jpg',
       },
     ],
-    totalAmount: 185000,
-    paymentMethod: 'mobile',
+    subtotal: 185000,
+    shippingCost: 2000,
+    discount: 0,
+    total: 187000,
+    totalAmount: 187000,
+    paymentMethod: 'card',
     paymentStatus: 'paid',
+    status: 'delivered',
     orderStatus: 'delivered',
+    shippingMethod: 'dakar',
+    shippingInfo: {
+      fullName: 'Client Test',
+      email: 'client@test.com',
+      phone: '+221 77 123 45 67',
+      address: 'Plateau',
+      city: 'Dakar',
+      postalCode: '10000',
+    },
     createdAt: '2024-12-20T10:30:00Z',
-  },
-  {
-    id: 'order-2',
-    userId: 'client-1',
-    customerName: 'Client Test',
-    customerPhone: '+221 77 123 45 67',
-    customerAddress: 'Dakar, Plateau',
-    items: [
-      {
-        productId: '4',
-        productName: 'Boubou Traditionnel Homme',
-        quantity: 2,
-        price: 45000,
-      },
-    ],
-    totalAmount: 90000,
-    paymentMethod: 'cash',
-    paymentStatus: 'pending',
-    orderStatus: 'confirmed',
-    createdAt: '2024-12-22T14:15:00Z',
   },
 ];
 
@@ -66,8 +81,14 @@ const orders = [...mockOrders];
 
 export const getOrders = () => orders;
 
+export const getAllOrders = () => orders;
+
 export const getOrdersByUserId = (userId: string) => {
   return orders.filter((order) => order.userId === userId);
+};
+
+export const getOrderById = (orderId: string) => {
+  return orders.find((order) => order.id === orderId);
 };
 
 export const addOrder = (order: Order) => {
@@ -85,6 +106,7 @@ export const updateOrderStatus = (
     orders[orderIndex] = {
       ...orders[orderIndex],
       orderStatus,
+      status: orderStatus,
       ...(paymentStatus && { paymentStatus }),
     };
     return orders[orderIndex];

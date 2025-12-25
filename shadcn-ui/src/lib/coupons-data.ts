@@ -4,7 +4,7 @@ import type { Coupon } from './types';
 // SANII WORLD - Coupons Data
 // ============================================
 
-const coupons: Coupon[] = [
+export const coupons: Coupon[] = [
   {
     id: 'welcome10',
     code: 'WELCOME10',
