@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useAuthStore } from '@/lib/auth-store';
+import Logo from '@/components/Logo';
 import { toast } from 'sonner';
 
 export default function Login() {
@@ -42,11 +43,11 @@ export default function Login() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <img src="/assets/logo-shop_variant_3.png" alt="DakarShop" className="h-16 w-16" />
+            <Logo variant="icon-only" />
           </div>
           <CardTitle className="text-2xl">Connexion</CardTitle>
           <CardDescription>
-            Connectez-vous à votre compte DakarShop
+            Connectez-vous à votre compte Sanii World
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -81,7 +82,7 @@ export default function Login() {
 
             <Button
               type="submit"
-              className="w-full bg-[#00A86B] hover:bg-[#008f5d]"
+              className="w-full bg-black hover:bg-gray-900"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -100,7 +101,7 @@ export default function Login() {
               Pas encore de compte ?{' '}
               <Link
                 to="/register"
-                className="text-[#00A86B] hover:underline font-medium"
+                className="text-black hover:underline font-medium"
               >
                 S'inscrire
               </Link>
@@ -108,7 +109,7 @@ export default function Login() {
             <div className="pt-4 border-t">
               <p className="text-xs text-gray-500 mb-2">Comptes de démonstration :</p>
               <p className="text-xs text-gray-600">
-                Admin: admin@dakarshop.sn / admin123
+                Admin: admin@saniiworld.com / SaniiAdmin2024!
               </p>
               <p className="text-xs text-gray-600">
                 Client: client@example.com / client123

@@ -13,6 +13,8 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
 import AdminDashboard from './pages/admin/Dashboard';
+import AdminCategories from './pages/admin/Categories';
+import AdminOptions from './pages/admin/Options';
 import AdminProducts from './pages/admin/Products';
 import AdminOrders from './pages/admin/Orders';
 import NotFound from './pages/NotFound';
@@ -42,10 +44,34 @@ const App = () => (
             }
           />
           <Route
+            path="/account"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/admin/dashboard"
             element={
               <ProtectedRoute requireAdmin>
                 <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/categories"
+            element={
+              <ProtectedRoute requireAdmin>
+                <AdminCategories />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/options"
+            element={
+              <ProtectedRoute requireAdmin>
+                <AdminOptions />
               </ProtectedRoute>
             }
           />

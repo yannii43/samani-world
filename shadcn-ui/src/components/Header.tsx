@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom';
-import { ShoppingCart, Menu, User, LogOut, LayoutDashboard } from 'lucide-react';
+import { ShoppingCart, Menu, User, LogOut, LayoutDashboard, Heart, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { useCartStore } from '@/lib/cart-store';
 import { useAuthStore } from '@/lib/auth-store';
+import Logo from '@/components/Logo';
 import {
   Sheet,
   SheetContent,
@@ -22,45 +24,63 @@ export default function Header() {
   const { isAuthenticated, user, logout } = useAuthStore();
 
   const navigation = [
-    { name: 'Accueil', href: '/' },
-    { name: 'Produits', href: '/products' },
-    { name: 'À Propos', href: '/about' },
+    { name: 'Nouveautés', href: '/products?filter=new' },
+    { name: 'Robes', href: '/category/robes' },
+    { name: 'Abaya', href: '/category/abaya' },
+    { name: 'Sacs', href: '/category/sacs' },
+    { name: 'Chaussures', href: '/category/chaussures' },
   ];
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white shadow-sm">
+      {/* Top Bar - Promo/Announcement */}
+      <div className="bg-black text-white text-center py-2 text-sm">
+        <p>✨ Livraison gratuite pour toute commande supérieure à 50 000 FCFA</p>
+      </div>
+
       <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
-          <Link to="/" className="flex items-center space-x-2">
-            <img
-              src="/assets/logo-shop.png"
-              alt="DakarShop"
-              className="h-10 w-10"
-            />
-            <span className="text-xl font-bold text-[#00A86B]">DakarShop</span>
-          </Link>
+        <div className="flex h-20 items-center justify-between">
+          {/* Logo */}
+          <Logo />
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-6">
+          <nav className="hidden lg:flex items-center space-x-8">
             {navigation.map((item) => (
               <Link
                 key={item.name}
                 to={item.href}
-                className="text-sm font-medium text-gray-700 hover:text-[#00A86B] transition-colors"
+                className="text-sm font-medium text-gray-700 hover:text-black transition-colors relative group"
               >
                 {item.name}
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-black transition-all group-hover:w-full"></span>
               </Link>
             ))}
           </nav>
 
+          {/* Right Actions */}
           <div className="flex items-center space-x-4">
+            {/* Search Icon */}
+            <Button variant="ghost" size="icon" className="hidden md:flex">
+              <Search className="h-5 w-5" />
+            </Button>
+
+            {/* Wishlist */}
+            {isAuthenticated && (
+              <Link to="/account/wishlist">
+                <Button variant="ghost" size="icon">
+                  <Heart className="h-5 w-5" />
+                </Button>
+              </Link>
+            )}
+
+            {/* Cart */}
             <Link to="/cart">
               <Button variant="ghost" size="icon" className="relative">
                 <ShoppingCart className="h-5 w-5" />
                 {totalItems > 0 && (
                   <Badge
                     variant="destructive"
-                    className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-[#00A86B] hover:bg-[#00A86B]"
+                    className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-black hover:bg-black"
                   >
                     {totalItems}
                   </Badge>
@@ -94,9 +114,9 @@ export default function Header() {
                     </>
                   )}
                   <DropdownMenuItem asChild>
-                    <Link to="/profile" className="cursor-pointer">
+                    <Link to="/account" className="cursor-pointer">
                       <User className="mr-2 h-4 w-4" />
-                      Mon Profil
+                      Mon Compte
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -113,7 +133,7 @@ export default function Header() {
               <Link to="/login">
                 <Button
                   variant="ghost"
-                  className="hidden md:flex text-[#00A86B] hover:text-[#008f5d]"
+                  className="hidden md:flex hover:text-black"
                 >
                   <User className="mr-2 h-4 w-4" />
                   Connexion
@@ -123,31 +143,34 @@ export default function Header() {
 
             {/* Mobile Menu */}
             <Sheet>
-              <SheetTrigger asChild className="md:hidden">
+              <SheetTrigger asChild className="lg:hidden">
                 <Button variant="ghost" size="icon">
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
               <SheetContent>
-                <nav className="flex flex-col space-y-4 mt-8">
-                  {navigation.map((item) => (
-                    <Link
-                      key={item.name}
-                      to={item.href}
-                      className="text-lg font-medium text-gray-700 hover:text-[#00A86B] transition-colors"
-                    >
-                      {item.name}
-                    </Link>
-                  ))}
-                  {!isAuthenticated && (
-                    <Link
-                      to="/login"
-                      className="text-lg font-medium text-[#00A86B] hover:text-[#008f5d] transition-colors"
-                    >
-                      Connexion
-                    </Link>
-                  )}
-                </nav>
+                <div className="mt-8">
+                  <Logo className="mb-8" linkTo="/" />
+                  <nav className="flex flex-col space-y-4">
+                    {navigation.map((item) => (
+                      <Link
+                        key={item.name}
+                        to={item.href}
+                        className="text-lg font-medium text-gray-700 hover:text-black transition-colors"
+                      >
+                        {item.name}
+                      </Link>
+                    ))}
+                    {!isAuthenticated && (
+                      <Link
+                        to="/login"
+                        className="text-lg font-medium text-black hover:text-gray-700 transition-colors"
+                      >
+                        Connexion
+                      </Link>
+                    )}
+                  </nav>
+                </div>
               </SheetContent>
             </Sheet>
           </div>

@@ -23,9 +23,9 @@ interface AuthStore {
 const mockUsers = [
   {
     id: 'admin-1',
-    email: 'admin@dakarshop.sn',
-    password: 'admin123',
-    name: 'Administrateur',
+    email: 'admin@saniiworld.com',
+    password: 'SaniiAdmin2024!',
+    name: 'Administrateur Sanii World',
     role: 'admin' as const,
   },
   {
