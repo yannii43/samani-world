@@ -10,22 +10,25 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useCartStore } from '@/lib/cart-store';
+import { useAuthStore } from '@/lib/auth-store';
+import { addOrder } from '@/lib/orders-data';
 import { formatPrice } from '@/lib/products-data';
 import { toast } from 'sonner';
 
 export default function Checkout() {
   const navigate = useNavigate();
   const { items, getTotalPrice, clearCart } = useCartStore();
+  const { user } = useAuthStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
 
   const [formData, setFormData] = useState({
-    fullName: '',
-    phone: '',
-    address: '',
+    fullName: user?.name || '',
+    phone: user?.phone || '',
+    address: user?.address || '',
     city: 'Dakar',
     notes: '',
-    paymentMethod: 'cash',
+    paymentMethod: 'cash' as 'cash' | 'mobile',
   });
 
   if (items.length === 0 && !orderPlaced) {
@@ -40,6 +43,28 @@ export default function Checkout() {
     // Simulate order processing
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
+    // Create order
+    const newOrder = {
+      id: `order-${Date.now()}`,
+      userId: user?.id || 'guest',
+      customerName: formData.fullName,
+      customerPhone: formData.phone,
+      customerAddress: `${formData.address}, ${formData.city}`,
+      items: items.map((item) => ({
+        productId: item.id,
+        productName: item.name,
+        quantity: item.quantity,
+        price: item.price,
+      })),
+      totalAmount: getTotalPrice(),
+      paymentMethod: formData.paymentMethod,
+      paymentStatus: 'pending' as const,
+      orderStatus: 'pending' as const,
+      createdAt: new Date().toISOString(),
+      notes: formData.notes,
+    };
+
+    addOrder(newOrder);
     setOrderPlaced(true);
     clearCart();
     setIsSubmitting(false);
@@ -64,12 +89,22 @@ export default function Checkout() {
               <p className="text-gray-600 mb-8">
                 Vous recevrez un appel au {formData.phone}
               </p>
-              <Button
-                onClick={() => navigate('/')}
-                className="bg-[#00A86B] hover:bg-[#008f5d]"
-              >
-                Retour à l'accueil
-              </Button>
+              <div className="flex gap-4 justify-center">
+                <Button
+                  onClick={() => navigate('/')}
+                  className="bg-[#00A86B] hover:bg-[#008f5d]"
+                >
+                  Retour à l'accueil
+                </Button>
+                {user && (
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate('/profile')}
+                  >
+                    Voir mes commandes
+                  </Button>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -170,7 +205,7 @@ export default function Checkout() {
                 <CardContent>
                   <RadioGroup
                     value={formData.paymentMethod}
-                    onValueChange={(value) =>
+                    onValueChange={(value: 'cash' | 'mobile') =>
                       setFormData({ ...formData, paymentMethod: value })
                     }
                   >
