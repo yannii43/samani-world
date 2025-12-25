@@ -1,7 +1,7 @@
 import type { Category } from './types';
 
 // ============================================
-// SANII WORLD - Categories Data
+// SAMANI WORLD - Categories Data
 // ============================================
 
 export const categories: Category[] = [

@@ -1,7 +1,7 @@
 import type { Product, ProductVariant } from './types';
 
 // ============================================
-// SANII WORLD - Products with Variants
+// SAMANI WORLD - Products with Variants
 // ============================================
 
 export const products: Product[] = [

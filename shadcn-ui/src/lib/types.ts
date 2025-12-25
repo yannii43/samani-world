@@ -1,5 +1,5 @@
 // ============================================
-// SANII WORLD - Type Definitions
+// SAMANI WORLD - Type Definitions
 // ============================================
 
 // User & Auth

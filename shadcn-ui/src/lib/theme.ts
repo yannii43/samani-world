@@ -1,5 +1,5 @@
 // ============================================
-// SANII WORLD - Theme Configuration
+// SAMANI WORLD - Theme Configuration
 // ============================================
 
 export const theme = {

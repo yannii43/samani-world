@@ -1,7 +1,7 @@
 import type { Coupon } from './types';
 
 // ============================================
-// SANII WORLD - Coupons Data
+// SAMANI WORLD - Coupons Data
 // ============================================
 
 export const coupons: Coupon[] = [

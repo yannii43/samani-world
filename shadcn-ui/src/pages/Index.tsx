@@ -22,7 +22,7 @@ export default function Index() {
         <div className="absolute inset-0">
           <img
             src="/assets/hero-sanii-world.jpg"
-            alt="Sanii World"
+            alt="Samani World"
             className="w-full h-full object-cover opacity-60"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-transparent" />
@@ -138,7 +138,7 @@ export default function Index() {
         <div className="container mx-auto px-4 text-center">
           <TrendingUp className="h-16 w-16 text-[#D4AF37] mx-auto mb-6" />
           <h2 className="text-4xl font-bold mb-4" style={{ fontFamily: '"Playfair Display", serif' }}>
-            Rejoignez Sanii World
+            Rejoignez Samani World
           </h2>
           <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
             Inscrivez-vous pour recevoir nos offres exclusives et être informé des nouvelles collections
@@ -161,7 +161,7 @@ export default function Index() {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div>
-              <h3 className="font-bold text-lg mb-4">Sanii World</h3>
+              <h3 className="font-bold text-lg mb-4">Samani World</h3>
               <p className="text-gray-400 text-sm">
                 Votre destination pour la mode féminine de luxe au Sénégal
               </p>
@@ -194,7 +194,7 @@ export default function Index() {
             </div>
           </div>
           <div className="border-t border-gray-800 pt-8 text-center text-sm text-gray-400">
-            <p>&copy; 2024 Sanii World. Tous droits réservés.</p>
+            <p>&copy; 2024 Samani World. Tous droits réservés.</p>
           </div>
         </div>
       </footer>

@@ -47,7 +47,7 @@ export default function Login() {
           </div>
           <CardTitle className="text-2xl">Connexion</CardTitle>
           <CardDescription>
-            Connectez-vous à votre compte Sanii World
+            Connectez-vous à votre compte Samani World
           </CardDescription>
         </CardHeader>
         <CardContent>

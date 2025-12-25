@@ -1,7 +1,7 @@
 import type { ProductOption, ProductOptionValue } from './types';
 
 // ============================================
-// SANII WORLD - Product Options Data
+// SAMANI WORLD - Product Options Data
 // ============================================
 
 export const productOptions: ProductOption[] = [

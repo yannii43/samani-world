@@ -1,7 +1,7 @@
 import type { ShippingConfig } from './types';
 
 // ============================================
-// SANII WORLD - Shipping Configuration
+// SAMANI WORLD - Shipping Configuration
 // ============================================
 
 export const shippingMethods: ShippingConfig[] = [

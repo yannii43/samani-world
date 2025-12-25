@@ -25,7 +25,7 @@ const mockUsers = [
     id: 'admin-1',
     email: 'admin@saniiworld.com',
     password: 'SaniiAdmin2024!',
-    name: 'Administrateur Sanii World',
+    name: 'Administrateur Samani World',
     role: 'admin' as const,
   },
   {

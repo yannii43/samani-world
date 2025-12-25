@@ -27,7 +27,7 @@ export default function AdminDashboard() {
             <h1 className="text-4xl font-bold text-gray-900" style={{ fontFamily: '"Playfair Display", serif' }}>
               Tableau de Bord Admin
             </h1>
-            <p className="text-gray-600 mt-2">Bienvenue sur Sanii World Admin</p>
+            <p className="text-gray-600 mt-2">Bienvenue sur Samani World Admin</p>
           </div>
         </div>
 
