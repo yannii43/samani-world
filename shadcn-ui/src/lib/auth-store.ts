@@ -5,39 +5,40 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: 'client' | 'admin';
-  phone?: string;
-  address?: string;
+  role: 'client' | 'admin' | 'superadmin';
+  phone?: string | null;
+  createdAt?: string;
 }
 
 interface AuthStore {
   user: User | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  logout: () => void;
-  register: (email: string, password: string, name: string, phone: string) => Promise<boolean>;
+  login: (emailOrPhone: string, password: string) => Promise<{ ok: boolean; error?: string }>;
+  logout: () => Promise<void>;
+  register: (data: { fullName: string; email: string; phone: string; password: string }) => Promise<{ ok: boolean; error?: string }>;
   updateProfile: (data: Partial<User>) => void;
+  checkAuth: () => Promise<void>;
 }
 
-// Mock users for demonstration
-const mockUsers = [
-  {
-    id: 'admin-1',
-    email: 'admin@saniiworld.com',
-    password: 'SaniiAdmin2024!',
-    name: 'Administrateur Samani World',
-    role: 'admin' as const,
-  },
-  {
-    id: 'client-1',
-    email: 'client@example.com',
-    password: 'client123',
-    name: 'Client Test',
-    role: 'client' as const,
-    phone: '+221 77 123 45 67',
-    address: 'Dakar, Plateau',
-  },
-];
+async function safeJson(res: Response) {
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+function normalizeUser(u: any): User | null {
+  if (!u) return null;
+  return {
+    id: u.id,
+    email: u.email,
+    name: u.name || u.fullName || '',
+    role: u.role,
+    phone: u.phone ?? null,
+    createdAt: u.createdAt ?? null,
+  };
+}
 
 export const useAuthStore = create<AuthStore>()(
   persist(
@@ -45,58 +46,89 @@ export const useAuthStore = create<AuthStore>()(
       user: null,
       isAuthenticated: false,
 
-      login: async (email: string, password: string) => {
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 500));
+      login: async (emailOrPhone, password) => {
+        try {
+          const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ emailOrPhone, password }),
+          });
 
-        const user = mockUsers.find(
-          (u) => u.email === email && u.password === password
-        );
+          const data = await safeJson(res);
 
-        if (user) {
-          const { password: _, ...userWithoutPassword } = user;
-          set({ user: userWithoutPassword, isAuthenticated: true });
-          return true;
+          if (!res.ok || !data?.ok || !data?.user) {
+            return { ok: false, error: data?.error || 'Identifiants incorrects' };
+          }
+
+          set({ user: normalizeUser(data.user), isAuthenticated: true });
+          return { ok: true };
+        } catch {
+          return { ok: false, error: 'Erreur réseau' };
         }
-
-        return false;
       },
 
-      logout: () => {
+      logout: async () => {
+        try {
+          await fetch('/api/auth/logout', {
+            method: 'POST',
+            credentials: 'include',
+          });
+        } catch {
+          // ignore
+        }
         set({ user: null, isAuthenticated: false });
       },
 
-      register: async (email: string, password: string, name: string, phone: string) => {
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 500));
+      register: async ({ fullName, email, phone, password }) => {
+        try {
+          const res = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ fullName, email, phone, password }),
+          });
 
-        // Check if user already exists
-        const existingUser = mockUsers.find((u) => u.email === email);
-        if (existingUser) {
-          return false;
+          const data = await safeJson(res);
+
+          if (!res.ok || !data?.ok || !data?.user) {
+            return { ok: false, error: data?.error || 'Erreur lors de l\'inscription' };
+          }
+
+          set({ user: normalizeUser(data.user), isAuthenticated: true });
+          return { ok: true };
+        } catch {
+          return { ok: false, error: 'Erreur réseau' };
         }
-
-        const newUser: User = {
-          id: `client-${Date.now()}`,
-          email,
-          name,
-          phone,
-          role: 'client',
-        };
-
-        set({ user: newUser, isAuthenticated: true });
-        return true;
       },
 
-      updateProfile: (data: Partial<User>) => {
+      updateProfile: (data) => {
         const currentUser = get().user;
-        if (currentUser) {
-          set({ user: { ...currentUser, ...data } });
+        if (!currentUser) return;
+        set({ user: { ...currentUser, ...data } });
+      },
+
+      checkAuth: async () => {
+        try {
+          const res = await fetch('/api/auth/me', { credentials: 'include' });
+          const data = await safeJson(res);
+          if (data?.ok && data?.user) {
+            set({ user: normalizeUser(data.user), isAuthenticated: true });
+          } else {
+            set({ user: null, isAuthenticated: false });
+          }
+        } catch {
+          // ignore
         }
       },
     }),
     {
-      name: 'auth-storage',
+      name: 'samani-auth-v3',
+      partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
     }
   )
 );
+
+export function isAdmin(user: User | null) {
+  return user?.role === 'admin' || user?.role === 'superadmin';
+}

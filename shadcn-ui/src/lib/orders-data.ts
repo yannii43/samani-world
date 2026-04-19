@@ -1,3 +1,6 @@
+
+import { v4 as uuidv4 } from 'uuid';
+
 export interface Order {
   id: string;
   userId: string;
@@ -7,6 +10,7 @@ export interface Order {
   customerAddress: string;
   items: {
     productId: string;
+    variantId?: string;
     productName: string;
     quantity: number;
     price: number;
@@ -37,50 +41,53 @@ export interface Order {
   notes?: string;
 }
 
-// Mock orders for demonstration
-export const mockOrders: Order[] = [
-  {
-    id: 'order-1',
-    userId: 'client-1',
-    orderNumber: 'SW2024001',
-    customerName: 'Client Test',
-    customerPhone: '+221 77 123 45 67',
-    customerAddress: 'Dakar, Plateau',
-    items: [
-      {
-        productId: '1',
-        productName: 'Smartphone Samsung Galaxy A54',
-        quantity: 1,
-        price: 185000,
-        coverImage: '/images/Smartphone.jpg',
-      },
-    ],
-    subtotal: 185000,
-    shippingCost: 2000,
-    discount: 0,
-    total: 187000,
-    totalAmount: 187000,
-    paymentMethod: 'card',
-    paymentStatus: 'paid',
-    status: 'delivered',
-    orderStatus: 'delivered',
-    shippingMethod: 'dakar',
-    shippingInfo: {
-      fullName: 'Client Test',
-      email: 'client@test.com',
-      phone: '+221 77 123 45 67',
-      address: 'Plateau',
-      city: 'Dakar',
-      postalCode: '10000',
-    },
-    createdAt: '2024-12-20T10:30:00Z',
-  },
-];
+type CreateOrderInput = {
+  userId: string;
+  items: Order['items'];
+  subtotal: number;
+  shippingCost: number;
+  discount: number;
+  total: number;
+  shippingMethod: string;
+  paymentMethod: Order['paymentMethod'];
+  couponCode?: string;
+  shippingInfo: Order['shippingInfo'];
+};
 
-const orders = [...mockOrders];
+const STORAGE_KEY = 'samani_orders_v1';
+
+const safeParse = <T,>(value: string | null): T | null => {
+  if (!value) return null;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return null;
+  }
+};
+
+const loadOrders = (): Order[] => {
+  if (typeof window === 'undefined') return [];
+  const parsed = safeParse<Order[]>(localStorage.getItem(STORAGE_KEY));
+  return Array.isArray(parsed) ? parsed : [];
+};
+
+let orders: Order[] = loadOrders();
+
+const saveOrders = () => {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+};
+
+const generateOrderNumber = (): string => {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const rnd = String(Math.floor(Math.random() * 9000) + 1000);
+  return `SW${yyyy}${mm}${dd}-${rnd}`;
+};
 
 export const getOrders = () => orders;
-
 export const getAllOrders = () => orders;
 
 export const getOrdersByUserId = (userId: string) => {
@@ -91,8 +98,41 @@ export const getOrderById = (orderId: string) => {
   return orders.find((order) => order.id === orderId);
 };
 
-export const addOrder = (order: Order) => {
-  orders.push(order);
+export const addOrder = (input: CreateOrderInput): Order => {
+  const now = new Date().toISOString();
+
+  const order: Order = {
+    id: `order-${uuidv4()}`,
+    userId: input.userId || 'guest',
+    orderNumber: generateOrderNumber(),
+
+    customerName: input.shippingInfo.fullName,
+    customerPhone: input.shippingInfo.phone,
+    customerAddress: input.shippingInfo.address ?? '',
+
+    items: input.items,
+    subtotal: input.subtotal,
+    shippingCost: input.shippingCost,
+    discount: input.discount,
+    total: input.total,
+    totalAmount: input.total,
+
+    paymentMethod: input.paymentMethod,
+    paymentStatus: input.paymentMethod === 'cash' ? 'pending' : 'paid',
+
+    status: 'pending',
+    orderStatus: 'pending',
+
+    shippingMethod: input.shippingMethod,
+    shippingInfo: input.shippingInfo,
+
+    couponCode: input.couponCode,
+    createdAt: now,
+    notes: input.shippingInfo.notes,
+  };
+
+  orders = [order, ...orders];
+  saveOrders();
   return order;
 };
 
@@ -101,15 +141,23 @@ export const updateOrderStatus = (
   orderStatus: Order['orderStatus'],
   paymentStatus?: Order['paymentStatus']
 ) => {
-  const orderIndex = orders.findIndex((o) => o.id === orderId);
-  if (orderIndex !== -1) {
-    orders[orderIndex] = {
-      ...orders[orderIndex],
-      orderStatus,
-      status: orderStatus,
-      ...(paymentStatus && { paymentStatus }),
-    };
-    return orders[orderIndex];
-  }
-  return null;
+  const idx = orders.findIndex((o) => o.id === orderId);
+  if (idx === -1) return null;
+
+  const updated: Order = {
+    ...orders[idx],
+    orderStatus,
+    status: orderStatus === 'delivered' ? 'delivered' : orderStatus,
+    ...(paymentStatus ? { paymentStatus } : {}),
+  };
+
+  orders = orders.map((o, i) => (i === idx ? updated : o));
+  saveOrders();
+  return updated;
 };
+
+export const clearAllOrders = () => {
+  orders = [];
+  saveOrders();
+};
+

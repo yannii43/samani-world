@@ -15,7 +15,7 @@ export default function Login() {
   const login = useAuthStore((state) => state.login);
 
   const [formData, setFormData] = useState({
-    email: '',
+    emailOrPhone: '',
     password: '',
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -26,13 +26,13 @@ export default function Login() {
     e.preventDefault();
     setIsLoading(true);
 
-    const success = await login(formData.email, formData.password);
+    const result = await login(formData.emailOrPhone, formData.password);
 
-    if (success) {
-      toast.success('Connexion réussie!');
+    if (result.ok) {
+      toast.success('Connexion réussie !');
       navigate(from, { replace: true });
     } else {
-      toast.error('Email ou mot de passe incorrect');
+      toast.error(result.error || 'Email/téléphone ou mot de passe incorrect');
     }
 
     setIsLoading(false);
@@ -53,16 +53,16 @@ export default function Login() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="emailOrPhone">Email ou téléphone</Label>
               <Input
-                id="email"
-                type="email"
+                id="emailOrPhone"
+                type="text"
                 required
-                value={formData.email}
+                value={formData.emailOrPhone}
                 onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
+                  setFormData({ ...formData, emailOrPhone: e.target.value })
                 }
-                placeholder="votre@email.com"
+                placeholder="votre@email.com ou +221..."
               />
             </div>
 

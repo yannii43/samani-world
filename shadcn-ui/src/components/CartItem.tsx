@@ -1,7 +1,8 @@
 import { Minus, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { useCartStore, type CartItem as CartItemType } from '@/lib/cart-store';
+import { useCartStore } from '@/lib/cart-store';
+import type { CartItem as CartItemType } from '@/lib/cart';
 import { formatPrice } from '@/lib/products-data';
 
 interface CartItemProps {
@@ -9,14 +10,15 @@ interface CartItemProps {
 }
 
 export default function CartItem({ item }: CartItemProps) {
-  const { updateQuantity, removeItem } = useCartStore();
+  const updateQty = useCartStore((s) => s.updateQty);
+  const remove = useCartStore((s) => s.remove);
 
   return (
     <Card>
       <CardContent className="p-4">
         <div className="flex gap-4">
           <img
-            src={item.image}
+            src={item.cover_image || ''}
             alt={item.name}
             className="h-24 w-24 rounded-lg object-cover"
           />
@@ -28,16 +30,16 @@ export default function CartItem({ item }: CartItemProps) {
                 variant="outline"
                 size="icon"
                 className="h-8 w-8"
-                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                onClick={() => updateQty(item.id, item.qty - 1, item.variantId)}
               >
                 <Minus className="h-4 w-4" />
               </Button>
-              <span className="w-12 text-center font-medium">{item.quantity}</span>
+              <span className="w-12 text-center font-medium">{item.qty}</span>
               <Button
                 variant="outline"
                 size="icon"
                 className="h-8 w-8"
-                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                onClick={() => updateQty(item.id, item.qty + 1, item.variantId)}
               >
                 <Plus className="h-4 w-4" />
               </Button>
@@ -45,7 +47,7 @@ export default function CartItem({ item }: CartItemProps) {
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 ml-auto text-red-600 hover:text-red-700 hover:bg-red-50"
-                onClick={() => removeItem(item.id)}
+                onClick={() => remove(item.id, item.variantId)}
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -53,7 +55,7 @@ export default function CartItem({ item }: CartItemProps) {
           </div>
           <div className="text-right">
             <p className="font-bold text-lg text-[#00A86B]">
-              {formatPrice(item.price * item.quantity)}
+              {formatPrice(item.price * item.qty)}
             </p>
           </div>
         </div>

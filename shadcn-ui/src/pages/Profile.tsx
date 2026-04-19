@@ -22,7 +22,7 @@ export default function Profile() {
   const [formData, setFormData] = useState({
     name: user?.name || '',
     phone: user?.phone || '',
-    address: user?.address || '',
+    address: '',
   });
 
   const userOrders = user ? getOrdersByUserId(user.id) : [];
@@ -166,7 +166,7 @@ export default function Profile() {
                           setFormData({
                             name: user.name,
                             phone: user.phone || '',
-                            address: user.address || '',
+                            address: '',
                           });
                         }}
                       >

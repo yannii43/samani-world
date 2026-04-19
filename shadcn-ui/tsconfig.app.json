@@ -1,30 +1,38 @@
 {
   "compilerOptions": {
+    /* Target & libs */
     "target": "ES2020",
-    "useDefineForClassFields": true,
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
-    "skipLibCheck": true,
+    "useDefineForClassFields": true,
 
-    /* Bundler mode */
-    "moduleResolution": "bundler",
+    /* Module / bundler (Vite) */
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
     "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "moduleDetection": "force",
     "noEmit": true,
+
+    /* React */
     "jsx": "react-jsx",
 
-    /* Linting */
-    "strict": false,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "noImplicitAny": false,
-    "noFallthroughCasesInSwitch": false,
+    /* Interop / types */
+    "skipLibCheck": true,
+    "types": ["vite/client"],
 
+    /* Alias @ -> src */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
-    }
+      "@/*": ["src/*"]
+    },
+
+    /* Linting / strictness (comme tu veux : permissif) */
+    "strict": false,
+    "noImplicitAny": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": false
   },
   "include": ["src"]
 }

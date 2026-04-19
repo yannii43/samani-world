@@ -1,74 +1,74 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import type { CartItem } from './types';
+// src/lib/cart-store.ts
+import { useSyncExternalStore } from "react";
+import { cart, type CartItem } from "@/lib/cart";
 
-interface CartStore {
+type CartState = {
   items: CartItem[];
-  addItem: (item: CartItem) => void;
-  removeItem: (itemId: string) => void;
-  updateQuantity: (itemId: string, quantity: number) => void;
-  clearCart: () => void;
+  subtotal: number;
+  count: number;
+
+  // ✅ pour ton Header actuel
   getTotalItems: () => number;
-  getSubtotal: () => number;
+
+  // actions
+  add: (item: Omit<CartItem, "qty">, qty?: number) => void;
+  updateQty: (id: string, qty: number, variantId?: string | null) => void;
+  remove: (id: string, variantId?: string | null) => void;
+  clear: () => void;
+};
+
+const KEY = "samani_cart_v1";
+
+// cache pour éviter warning React "getSnapshot should be cached"
+let cachedRaw: string | null = null;
+let cachedState: CartState | null = null;
+
+function safeParse(raw: string): CartItem[] {
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }
 
-export const useCartStore = create<CartStore>()(
-  persist(
-    (set, get) => ({
-      items: [],
+function computeState(items: CartItem[]): CartState {
+  const subtotal = items.reduce((sum, it) => sum + it.price * it.qty, 0);
+  const count = items.reduce((sum, it) => sum + it.qty, 0);
 
-      addItem: (item: CartItem) => {
-        const items = get().items;
-        const existingItem = items.find((i) => i.id === item.id);
+  return {
+    items,
+    subtotal,
+    count,
+    getTotalItems: () => count,
 
-        if (existingItem) {
-          // Update quantity if item already exists
-          set({
-            items: items.map((i) =>
-              i.id === item.id
-                ? { ...i, quantity: Math.min(i.quantity + item.quantity, i.stock) }
-                : i
-            ),
-          });
-        } else {
-          // Add new item
-          set({ items: [...items, item] });
-        }
-      },
+    add: cart.add,
+    updateQty: cart.updateQty,
+    remove: cart.remove,
+    clear: cart.clear,
+  };
+}
 
-      removeItem: (itemId: string) => {
-        set({ items: get().items.filter((i) => i.id !== itemId) });
-      },
+function getSnapshot(): CartState {
+  const raw = localStorage.getItem(KEY) || "[]";
+  if (raw !== cachedRaw || !cachedState) {
+    cachedRaw = raw;
+    const items = safeParse(raw);
+    cachedState = computeState(items);
+  }
+  return cachedState;
+}
 
-      updateQuantity: (itemId: string, quantity: number) => {
-        if (quantity <= 0) {
-          get().removeItem(itemId);
-          return;
-        }
+function subscribe(onStoreChange: () => void) {
+  const handler = () => onStoreChange();
+  window.addEventListener("cart:changed", handler);
+  return () => window.removeEventListener("cart:changed", handler);
+}
 
-        set({
-          items: get().items.map((i) =>
-            i.id === itemId
-              ? { ...i, quantity: Math.min(quantity, i.stock) }
-              : i
-          ),
-        });
-      },
-
-      clearCart: () => {
-        set({ items: [] });
-      },
-
-      getTotalItems: () => {
-        return get().items.reduce((total, item) => total + item.quantity, 0);
-      },
-
-      getSubtotal: () => {
-        return get().items.reduce((total, item) => total + item.price * item.quantity, 0);
-      },
-    }),
-    {
-      name: 'cart-storage',
-    }
-  )
-);
+export function useCartStore<T>(selector: (s: CartState) => T): T {
+  return useSyncExternalStore(
+    subscribe,
+    () => selector(getSnapshot()),
+    () => selector(getSnapshot())
+  );
+}

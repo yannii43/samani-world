@@ -1,359 +1,270 @@
-import { useState, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Search, SlidersHorizontal, X } from 'lucide-react';
-import Header from '@/components/Header';
-import ProductCard from '@/components/ProductCard';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
-import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet';
-import { Badge } from '@/components/ui/badge';
-import { products as allProducts } from '@/lib/products-data-v2';
-import { getAllCategories } from '@/lib/categories-data';
-import { productOptions, getOptionValuesByOptionId } from '@/lib/options-data';
-import type { Product } from '@/lib/types';
+// src/pages/Checkout.tsx
+import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { cart, money, type CartItem } from "@/lib/cart";
 
-export default function Products() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 100000]);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedOptions, setSelectedOptions] = useState<Record<string, string[]>>({});
-  const [inStockOnly, setInStockOnly] = useState(false);
-  const [sortBy, setSortBy] = useState<string>('newest');
+type OrderResponse =
+  | { ok: true; order: { id: string; orderNumber: string; total: number } }
+  | { ok: false; error: string; message?: string };
 
-  const categories = getAllCategories();
-  const filterParam = searchParams.get('filter');
+const SHIPPING_OPTIONS = [
+  { id: "click-collect", label: "Click & Collect (retrait boutique)", cost: 0 },
+  { id: "dakar", label: "Livraison Dakar (1–2 jours)", cost: 2000 },
+  { id: "hors-dakar", label: "Livraison hors Dakar", cost: 4000 },
+] as const;
 
-  // Apply filters
-  const filteredProducts = useMemo(() => {
-    let filtered = [...allProducts];
+type ShippingMethod = (typeof SHIPPING_OPTIONS)[number]["id"];
+type PaymentMethod = "on-delivery" | "online";
 
-    // Filter by search query
-    if (searchQuery) {
-      filtered = filtered.filter((p) =>
-        p.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+export default function Checkout() {
+  const navigate = useNavigate();
+
+  const [items, setItems] = useState<CartItem[]>(() => cart.get());
+
+  useEffect(() => {
+    const onChange = () => setItems(cart.get());
+    window.addEventListener("cart:changed", onChange);
+    return () => window.removeEventListener("cart:changed", onChange);
+  }, []);
+
+  const [customerName, setCustomerName] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [shippingAddress, setShippingAddress] = useState("");
+
+  const [shippingMethod, setShippingMethod] = useState<ShippingMethod>("dakar");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("on-delivery");
+
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const subtotal = useMemo(() => items.reduce((sum, it) => sum + it.price * it.qty, 0), [items]);
+
+  const shippingCost = useMemo(() => {
+    const opt = SHIPPING_OPTIONS.find((x) => x.id === shippingMethod);
+    return opt ? opt.cost : 0;
+  }, [shippingMethod]);
+
+  const total = subtotal + shippingCost;
+
+  async function submit() {
+    setErr(null);
+
+    if (!items.length) return setErr("Ton panier est vide.");
+    if (!customerName.trim()) return setErr("Nom requis.");
+    if (!customerPhone.trim()) return setErr("Téléphone requis.");
+    if (!customerEmail.trim()) return setErr("Email requis.");
+    if (shippingMethod !== "click-collect" && !shippingAddress.trim()) {
+      return setErr("Adresse de livraison requise.");
     }
 
-    // Filter by URL param (featured, new, bestseller)
-    if (filterParam === 'featured') {
-      filtered = filtered.filter((p) => p.isFeatured);
-    } else if (filterParam === 'new') {
-      filtered = filtered.filter((p) => p.isNewArrival);
-    } else if (filterParam === 'bestseller') {
-      filtered = filtered.filter((p) => p.isBestSeller);
+    if (paymentMethod === "online") {
+      return setErr("Paiement en ligne disponible en V2. Choisis “Paiement à la livraison” pour V1.");
     }
 
-    // Filter by categories
-    if (selectedCategories.length > 0) {
-      filtered = filtered.filter((p) => selectedCategories.includes(p.categoryId));
+    // ✅ DB exige variant_id NOT NULL
+    const missing = items.find((it) => !it.variantId);
+    if (missing) {
+      return setErr(`Choisis une variante pour "${missing.name}" (taille/couleur) puis réessaie.`);
     }
 
-    // Filter by price range
-    filtered = filtered.filter(
-      (p) => p.basePrice >= priceRange[0] && p.basePrice <= priceRange[1]
-    );
+    setLoading(true);
+    try {
+      const payload = {
+        customerName: customerName.trim(),
+        customerEmail: customerEmail.trim(),
+        customerPhone: customerPhone.trim(),
+        shippingMethod, // click-collect | dakar | hors-dakar
+        shippingAddress: shippingMethod === "click-collect" ? "RETRAIT BOUTIQUE" : shippingAddress.trim(),
+        paymentMethod: "on-delivery",
+        items: items.map((it) => ({
+          productId: it.id,
+          variantId: it.variantId, // ✅ jamais null
+          quantity: it.qty,
+        })),
+      };
 
-    // Filter by stock (simplified - would need variant check in real app)
-    if (inStockOnly) {
-      filtered = filtered.filter((p) => p.isActive);
-    }
-
-    // Sort
-    if (sortBy === 'price-asc') {
-      filtered.sort((a, b) => a.basePrice - b.basePrice);
-    } else if (sortBy === 'price-desc') {
-      filtered.sort((a, b) => b.basePrice - a.basePrice);
-    } else if (sortBy === 'newest') {
-      filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    } else if (sortBy === 'popular') {
-      filtered.sort((a, b) => {
-        const aScore = (a.isBestSeller ? 3 : 0) + (a.isFeatured ? 2 : 0) + (a.isNewArrival ? 1 : 0);
-        const bScore = (b.isBestSeller ? 3 : 0) + (b.isFeatured ? 2 : 0) + (b.isNewArrival ? 1 : 0);
-        return bScore - aScore;
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
+
+      const text = await res.text();
+      let data: OrderResponse;
+
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error(`Réponse API non-JSON: ${text.slice(0, 160)}`);
+      }
+
+      if (!res.ok || data.ok === false) {
+        throw new Error((data as any)?.message || (data as any)?.error || `Erreur API (${res.status})`);
+      }
+
+      cart.clear();
+      navigate(`/order-confirmation/${encodeURIComponent(data.order.id)}`);
+    } catch (e: any) {
+      setErr(e?.message || String(e));
+    } finally {
+      setLoading(false);
     }
-
-    return filtered;
-  }, [allProducts, searchQuery, filterParam, selectedCategories, priceRange, inStockOnly, sortBy]);
-
-  const handleCategoryToggle = (categoryId: string) => {
-    setSelectedCategories((prev) =>
-      prev.includes(categoryId)
-        ? prev.filter((id) => id !== categoryId)
-        : [...prev, categoryId]
-    );
-  };
-
-  const clearFilters = () => {
-    setSearchQuery('');
-    setPriceRange([0, 100000]);
-    setSelectedCategories([]);
-    setSelectedOptions({});
-    setInStockOnly(false);
-    setSearchParams({});
-  };
-
-  const activeFiltersCount =
-    selectedCategories.length +
-    (searchQuery ? 1 : 0) +
-    (priceRange[0] > 0 || priceRange[1] < 100000 ? 1 : 0) +
-    (inStockOnly ? 1 : 0) +
-    Object.values(selectedOptions).flat().length;
-
-  const FilterContent = () => (
-    <div className="space-y-6">
-      {/* Search */}
-      <div>
-        <Label className="text-sm font-semibold mb-2 block">Recherche</Label>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Rechercher un produit..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-      </div>
-
-      {/* Categories */}
-      <div>
-        <Label className="text-sm font-semibold mb-3 block">Catégories</Label>
-        <div className="space-y-2">
-          {categories.map((category) => (
-            <div key={category.id} className="flex items-center space-x-2">
-              <Checkbox
-                id={`cat-${category.id}`}
-                checked={selectedCategories.includes(category.id)}
-                onCheckedChange={() => handleCategoryToggle(category.id)}
-              />
-              <label
-                htmlFor={`cat-${category.id}`}
-                className="text-sm cursor-pointer hover:text-[#D4AF37]"
-              >
-                {category.name}
-              </label>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Price Range */}
-      <div>
-        <Label className="text-sm font-semibold mb-3 block">
-          Prix: {priceRange[0].toLocaleString('fr-FR')} - {priceRange[1].toLocaleString('fr-FR')} FCFA
-        </Label>
-        <Slider
-          value={priceRange}
-          onValueChange={(value) => setPriceRange(value as [number, number])}
-          min={0}
-          max={100000}
-          step={5000}
-          className="mt-2"
-        />
-      </div>
-
-      {/* Size Filter */}
-      {productOptions.find((o) => o.id === 'size') && (
-        <div>
-          <Label className="text-sm font-semibold mb-3 block">Taille</Label>
-          <div className="flex flex-wrap gap-2">
-            {getOptionValuesByOptionId('size').map((value) => {
-              const isSelected = selectedOptions['size']?.includes(value.id);
-              return (
-                <Button
-                  key={value.id}
-                  variant={isSelected ? 'default' : 'outline'}
-                  size="sm"
-                  className={isSelected ? 'bg-black hover:bg-gray-900' : ''}
-                  onClick={() => {
-                    setSelectedOptions((prev) => {
-                      const current = prev['size'] || [];
-                      return {
-                        ...prev,
-                        size: isSelected
-                          ? current.filter((id) => id !== value.id)
-                          : [...current, value.id],
-                      };
-                    });
-                  }}
-                >
-                  {value.value}
-                </Button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Color Filter */}
-      {productOptions.find((o) => o.id === 'color') && (
-        <div>
-          <Label className="text-sm font-semibold mb-3 block">Couleur</Label>
-          <div className="flex flex-wrap gap-3">
-            {getOptionValuesByOptionId('color').map((value) => {
-              const isSelected = selectedOptions['color']?.includes(value.id);
-              return (
-                <button
-                  key={value.id}
-                  type="button"
-                  className={`w-8 h-8 rounded-full border-2 transition-all ${
-                    isSelected ? 'border-black scale-110' : 'border-gray-300'
-                  }`}
-                  style={{ backgroundColor: value.colorHex }}
-                  onClick={() => {
-                    setSelectedOptions((prev) => {
-                      const current = prev['color'] || [];
-                      return {
-                        ...prev,
-                        color: isSelected
-                          ? current.filter((id) => id !== value.id)
-                          : [...current, value.id],
-                      };
-                    });
-                  }}
-                  title={value.displayValue || value.value}
-                />
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Stock Filter */}
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="inStock"
-          checked={inStockOnly}
-          onCheckedChange={(checked) => setInStockOnly(checked as boolean)}
-        />
-        <label htmlFor="inStock" className="text-sm cursor-pointer">
-          En stock uniquement
-        </label>
-      </div>
-
-      {/* Clear Filters */}
-      {activeFiltersCount > 0 && (
-        <Button
-          variant="outline"
-          className="w-full"
-          onClick={clearFilters}
-        >
-          <X className="mr-2 h-4 w-4" />
-          Effacer les filtres ({activeFiltersCount})
-        </Button>
-      )}
-    </div>
-  );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
+    <div style={{ maxWidth: 1100, margin: "0 auto", padding: 16 }}>
+      <h1 style={{ marginTop: 6 }}>Checkout</h1>
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2" style={{ fontFamily: '"Playfair Display", serif' }}>
-            {filterParam === 'featured' && 'Produits Vedettes'}
-            {filterParam === 'new' && 'Nouveautés'}
-            {filterParam === 'bestseller' && 'Best-sellers'}
-            {!filterParam && 'Tous les Produits'}
-          </h1>
-          <p className="text-gray-600">
-            {filteredProducts.length} produit{filteredProducts.length > 1 ? 's' : ''} trouvé{filteredProducts.length > 1 ? 's' : ''}
-          </p>
+      {err && (
+        <div style={{ background: "#ffe9e9", border: "1px solid #ffb3b3", padding: 12, borderRadius: 12, marginBottom: 14 }}>
+          <b>Erreur:</b> {err}
         </div>
+      )}
 
-        <div className="flex gap-8">
-          {/* Desktop Filters Sidebar */}
-          <aside className="hidden lg:block w-64 flex-shrink-0">
-            <div className="sticky top-24 bg-white rounded-lg p-6 shadow-sm">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-semibold">Filtres</h2>
-                {activeFiltersCount > 0 && (
-                  <Badge variant="secondary">{activeFiltersCount}</Badge>
-                )}
-              </div>
-              <FilterContent />
-            </div>
-          </aside>
+      <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: 18 }}>
+        {/* Form */}
+        <div style={{ border: "1px solid #eee", borderRadius: 16, padding: 16 }}>
+          <h3 style={{ marginTop: 0 }}>Informations client</h3>
 
-          {/* Main Content */}
-          <div className="flex-1">
-            {/* Mobile Filters & Sort */}
-            <div className="flex items-center justify-between mb-6 gap-4">
-              {/* Mobile Filter Button */}
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="outline" className="lg:hidden">
-                    <SlidersHorizontal className="mr-2 h-4 w-4" />
-                    Filtres
-                    {activeFiltersCount > 0 && (
-                      <Badge variant="secondary" className="ml-2">
-                        {activeFiltersCount}
-                      </Badge>
-                    )}
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-80 overflow-y-auto">
-                  <SheetHeader>
-                    <SheetTitle>Filtres</SheetTitle>
-                  </SheetHeader>
-                  <div className="mt-6">
-                    <FilterContent />
-                  </div>
-                </SheetContent>
-              </Sheet>
+          <div style={{ display: "grid", gap: 10 }}>
+            <input
+              placeholder="Nom complet *"
+              value={customerName}
+              onChange={(e) => setCustomerName(e.target.value)}
+              style={{ padding: 12, borderRadius: 12, border: "1px solid #ddd" }}
+            />
+            <input
+              placeholder="Téléphone *"
+              value={customerPhone}
+              onChange={(e) => setCustomerPhone(e.target.value)}
+              style={{ padding: 12, borderRadius: 12, border: "1px solid #ddd" }}
+            />
+            <input
+              placeholder="Email *"
+              value={customerEmail}
+              onChange={(e) => setCustomerEmail(e.target.value)}
+              style={{ padding: 12, borderRadius: 12, border: "1px solid #ddd" }}
+            />
+          </div>
 
-              {/* Sort */}
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Trier par" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="newest">Plus récent</SelectItem>
-                  <SelectItem value="popular">Populaire</SelectItem>
-                  <SelectItem value="price-asc">Prix croissant</SelectItem>
-                  <SelectItem value="price-desc">Prix décroissant</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <h3 style={{ marginTop: 18 }}>Livraison</h3>
 
-            {/* Products Grid */}
-            {filteredProducts.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-16">
-                <p className="text-xl text-gray-600 mb-4">
-                  Aucun produit trouvé
-                </p>
-                <Button onClick={clearFilters}>
-                  Effacer les filtres
-                </Button>
-              </div>
+          <div style={{ display: "grid", gap: 10 }}>
+            <select
+              value={shippingMethod}
+              onChange={(e) => setShippingMethod(e.target.value as ShippingMethod)}
+              style={{ padding: 12, borderRadius: 12, border: "1px solid #ddd" }}
+            >
+              {SHIPPING_OPTIONS.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.label} — {money(o.cost)}
+                </option>
+              ))}
+            </select>
+
+            {shippingMethod !== "click-collect" && (
+              <input
+                placeholder="Adresse de livraison *"
+                value={shippingAddress}
+                onChange={(e) => setShippingAddress(e.target.value)}
+                style={{ padding: 12, borderRadius: 12, border: "1px solid #ddd" }}
+              />
             )}
           </div>
+
+          <h3 style={{ marginTop: 18 }}>Paiement</h3>
+
+          <div style={{ display: "grid", gap: 10 }}>
+            <label style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <input
+                type="radio"
+                name="pay"
+                checked={paymentMethod === "on-delivery"}
+                onChange={() => setPaymentMethod("on-delivery")}
+              />
+              Paiement à la livraison (V1)
+            </label>
+
+            <label style={{ display: "flex", gap: 10, alignItems: "center", opacity: 0.6 }}>
+              <input
+                type="radio"
+                name="pay"
+                checked={paymentMethod === "online"}
+                onChange={() => setPaymentMethod("online")}
+              />
+              Paiement en ligne (V2 / bientôt)
+            </label>
+          </div>
+
+          <div style={{ display: "flex", gap: 12, marginTop: 18, flexWrap: "wrap" }}>
+            <Link to="/cart" style={{ textDecoration: "none" }}>
+              <button style={{ padding: "12px 14px", borderRadius: 12, border: "1px solid #ddd", background: "#fff" }}>
+                ← Retour panier
+              </button>
+            </Link>
+
+            <button
+              onClick={submit}
+              disabled={loading}
+              style={{
+                padding: "12px 14px",
+                borderRadius: 12,
+                border: "1px solid #111",
+                background: "#111",
+                color: "#fff",
+                cursor: "pointer",
+                minWidth: 220,
+              }}
+            >
+              {loading ? "Envoi..." : "Valider la commande"}
+            </button>
+          </div>
+        </div>
+
+        {/* Summary */}
+        <div style={{ border: "1px solid #eee", borderRadius: 16, padding: 16 }}>
+          <h3 style={{ marginTop: 0 }}>Récapitulatif</h3>
+
+          {!items.length ? (
+            <div>Panier vide.</div>
+          ) : (
+            <div style={{ display: "grid", gap: 10 }}>
+              {items.map((it) => (
+                <div key={`${it.id}-${it.variantId}`} style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                  <img
+                    src={it.cover_image || "/assets/placeholder.jpg"}
+                    alt={it.name}
+                    style={{ width: 54, height: 54, borderRadius: 12, objectFit: "cover", border: "1px solid #eee" }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700 }}>{it.name}</div>
+                    <div style={{ opacity: 0.7 }}>
+                      {it.qty} × {money(it.price)}
+                      {it.variantDetails ? <span style={{ marginLeft: 8 }}>({it.variantDetails})</span> : null}
+                    </div>
+                  </div>
+                  <div style={{ fontWeight: 800 }}>{money(it.price * it.qty)}</div>
+                </div>
+              ))}
+
+              <hr style={{ border: "none", borderTop: "1px solid #eee", margin: "10px 0" }} />
+
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>Sous-total</span>
+                <b>{money(subtotal)}</b>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>Livraison</span>
+                <b>{money(shippingCost)}</b>
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 18, marginTop: 6 }}>
+                <span>Total</span>
+                <b>{money(total)}</b>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

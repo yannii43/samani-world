@@ -36,18 +36,18 @@ export default function Register() {
 
     setIsLoading(true);
 
-    const success = await register(
-      formData.email,
-      formData.password,
-      formData.name,
-      formData.phone
-    );
+    const result = await register({
+      fullName: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      password: formData.password,
+    });
 
-    if (success) {
-      toast.success('Compte créé avec succès!');
+    if (result.ok) {
+      toast.success('Compte créé avec succès !');
       navigate('/');
     } else {
-      toast.error('Cet email est déjà utilisé');
+      toast.error(result.error || 'Cet email est déjà utilisé');
     }
 
     setIsLoading(false);
@@ -138,7 +138,7 @@ export default function Register() {
 
             <Button
               type="submit"
-              className="w-full bg-[#00A86B] hover:bg-[#008f5d]"
+              className="w-full bg-black hover:bg-gray-900"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -157,7 +157,7 @@ export default function Register() {
               Vous avez déjà un compte ?{' '}
               <Link
                 to="/login"
-                className="text-[#00A86B] hover:underline font-medium"
+                className="text-black hover:underline font-medium"
               >
                 Se connecter
               </Link>

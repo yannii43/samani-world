@@ -49,3 +49,9 @@ test-results/
 pnpm-lock.yaml
 *.pyc
 __pycache__
+
+# Uploads & data locaux
+uploads/*
+!uploads/.gitkeep
+data/
+cookies.txt
