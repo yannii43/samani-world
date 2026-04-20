@@ -3,7 +3,9 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { apiGet } from "@/lib/api";
-import { cart, money } from "@/lib/cart";
+import { money } from "@/lib/cart";
+import { useCartStore } from "@/lib/cart-store";
+import Header from "@/components/Header";
 
 type Variant = {
   id: string;
@@ -88,6 +90,7 @@ function humanizeVariant(details?: string | null) {
 }
 
 export default function ProductDetail() {
+  const addItem = useCartStore((state) => state.addItem);
   const { slug } = useParams<{ slug: string }>();
 
   const [loading, setLoading] = useState(true);
@@ -222,15 +225,16 @@ export default function ProductDetail() {
     try {
       const details = selectedVariant?.variant_details || selectedVariant?.details || null;
 
-      cart.add({
-        id: product.id,
-        name: product.name,
-        slug: product.slug,
-        price: displayedPrice,
-        qty,
+      addItem({
+        id: selectedVariantId,
+        productId: product.id,
         variantId: selectedVariantId,
-        cover_image: cover ? resolveImage(cover) : null,
-        variantDetails: details ? humanizeVariant(details) : null,
+        productName: product.name,
+        price: displayedPrice,
+        quantity: qty,
+        coverImage: cover ? resolveImage(cover) : "",
+        variantDetails: details ? humanizeVariant(details) ?? "" : (selectedVariant?.sku ?? ""),
+        stock: selectedVariant?.stock ?? 99,
       });
 
       // petite confirmation soft
@@ -244,32 +248,36 @@ export default function ProductDetail() {
 
   if (loading) {
     return (
-      <div style={{ padding: 16, maxWidth: 1100, margin: "0 auto" }}>
-        <h1>Produit</h1>
-        <p>Chargement…</p>
-      </div>
+      <>
+        <Header />
+        <div style={{ padding: 16, maxWidth: 1100, margin: "0 auto" }}>
+          <p>Chargement…</p>
+        </div>
+      </>
     );
   }
 
   if (err && !product) {
     return (
-      <div style={{ padding: 16, maxWidth: 1100, margin: "0 auto" }}>
-        <h1>Produit</h1>
-        <p style={{ color: "#b00020" }}>
-          <b>Erreur :</b> {err}
-        </p>
-        <Link to="/products">Retour aux produits</Link>
-      </div>
+      <>
+        <Header />
+        <div style={{ padding: 16, maxWidth: 1100, margin: "0 auto" }}>
+          <p style={{ color: "#b00020" }}><b>Erreur :</b> {err}</p>
+          <Link to="/products">Retour aux produits</Link>
+        </div>
+      </>
     );
   }
 
   if (!product) {
     return (
-      <div style={{ padding: 16, maxWidth: 1100, margin: "0 auto" }}>
-        <h1>Produit</h1>
+      <>
+        <Header />
+        <div style={{ padding: 16, maxWidth: 1100, margin: "0 auto" }}>
         <p>Produit introuvable.</p>
         <Link to="/products">Retour aux produits</Link>
       </div>
+      </>
     );
   }
 
@@ -290,6 +298,8 @@ export default function ProductDetail() {
   };
 
   return (
+    <>
+    <Header />
     <div style={{ padding: 16, maxWidth: 1100, margin: "0 auto" }}>
       <Helmet>
         <title>{product.name} — Samani World Dakar</title>
@@ -432,5 +442,6 @@ export default function ProductDetail() {
         </div>
       </div>
     </div>
+    </>
   );
 }
