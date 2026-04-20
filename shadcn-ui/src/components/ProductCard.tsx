@@ -2,14 +2,17 @@ import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import type { Product } from '@/lib/types';
-import { formatPrice, getTotalStock } from '@/lib/products-data-v2';
+import { formatPrice } from '@/lib/products-data-v2';
 
 interface ProductCardProps {
   product: Product;
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  const totalStock = getTotalStock(product.id);
+  const variants = (product as any).variants ?? [];
+  const totalStock = variants.length > 0
+    ? variants.reduce((sum: number, v: any) => sum + (Number(v.stock) || 0), 0)
+    : 1; // si pas de variantes chargées, on considère en stock
   const inStock = totalStock > 0;
 
   return (
