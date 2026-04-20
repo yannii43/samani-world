@@ -1,19 +1,34 @@
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { ArrowRight, Sparkles, TrendingUp, Star } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import ProductCard from '@/components/ProductCard';
 import CategoryCard from '@/components/CategoryCard';
+import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getMainCategories } from '@/lib/categories-data';
-import { getFeaturedProducts, getNewArrivals } from '@/lib/products-data-v2';
+import type { Product } from '@/lib/types';
 
 export default function Index() {
   const mainCategories = getMainCategories();
-  const featuredProducts = getFeaturedProducts().slice(0, 4);
-  const newArrivals = getNewArrivals().slice(0, 4);
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [newArrivals, setNewArrivals] = useState<Product[]>([]);
+
+  useEffect(() => {
+    fetch('/api/products?filter=featured&limit=4')
+      .then(r => r.json())
+      .then(d => setFeaturedProducts(d.products || []))
+      .catch(() => {});
+    fetch('/api/products?filter=new&limit=4')
+      .then(r => r.json())
+      .then(d => setNewArrivals(d.products || []))
+      .catch(() => {});
+  }, []);
 
   return (
+    <>
+    <Header />
     <div className="bg-white">
       <Helmet>
         <title>Samani World — Boutique Mode Féminine Luxe à Dakar, Sénégal</title>
@@ -161,5 +176,6 @@ export default function Index() {
       </section>
 
     </div>
+    </>
   );
 }
