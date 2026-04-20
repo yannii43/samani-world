@@ -210,7 +210,8 @@ export default function ProductsPage() {
   const loadProducts = useCallback(async (q: string, category: string, filter: string) => {
     setLoading(true);
     try {
-      const url = new URL('/api/products', window.location.origin);
+      const apiBase = import.meta.env.VITE_API_URL || '';
+      const url = new URL('/api/products', apiBase || window.location.origin);
       if (q)        url.searchParams.set('q', q);
       if (category) url.searchParams.set('categorySlug', category);
       if (filter)   url.searchParams.set('filter', filter);
@@ -229,7 +230,7 @@ export default function ProductsPage() {
   }, []);
 
   useEffect(() => {
-    fetch('/api/categories')
+    fetch(`${import.meta.env.VITE_API_URL || ''}/api/categories`)
       .then((r) => r.json())
       .then((data) => setCategories(data.categories || []))
       .catch(() => {});
