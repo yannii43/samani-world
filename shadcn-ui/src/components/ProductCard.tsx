@@ -20,8 +20,9 @@ export default function ProductCard({ product }: ProductCardProps) {
       <Card className="overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 hover-lift">
         <div className="relative aspect-[3/4] overflow-hidden bg-gray-100">
           <img
-            src={product.coverImage}
+            src={product.coverImage || '/assets/placeholder.jpg'}
             alt={product.name}
+            onError={(e) => { (e.target as HTMLImageElement).src = '/assets/placeholder.jpg'; }}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
           />
           
