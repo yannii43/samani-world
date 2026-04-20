@@ -29,7 +29,7 @@ const App = () => (
           {/* Public Routes */}
           <Route path="/" element={<Index />} />
           <Route path="/products" element={<Products />} />
-          <Route path="/product/:id" element={<ProductDetail />} />
+          <Route path="/product/:slug" element={<ProductDetail />} />
           <Route path="/category/:slug" element={<Category />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
