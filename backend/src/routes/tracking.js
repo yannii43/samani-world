@@ -28,7 +28,7 @@ function isAllowedTransition(from, to) {
 
 async function getLastEvent(orderId) {
   const [rows] = await pool.query(
-    `SELECT id, status, note, created_at AS createdAt
+    `SELECT id, status, message AS note, created_at AS createdAt
      FROM tracking_events
      WHERE order_id = ?
      ORDER BY created_at DESC
@@ -135,7 +135,7 @@ router.get("/admin/tracking/:orderId", authRequired, adminOnly, async (req, res)
     if (!order) return res.status(404).json({ ok: false, error: "ORDER_NOT_FOUND" });
 
     const [events] = await pool.query(
-      `SELECT id, status, note, created_at AS createdAt
+      `SELECT id, status, message AS note, created_at AS createdAt
        FROM tracking_events
        WHERE order_id = ?
        ORDER BY created_at ASC`,
@@ -186,7 +186,7 @@ router.post("/admin/tracking/event", authRequired, adminOnly, async (req, res) =
 
     // create event
     await pool.query(
-      `INSERT INTO tracking_events (id, order_id, status, note, created_at)
+      `INSERT INTO tracking_events (id, order_id, status, message, created_at)
        VALUES (UUID(), ?, ?, ?, NOW())`,
       [orderId, status, note]
     );
@@ -211,16 +211,16 @@ router.patch("/admin/tracking/event/:eventId", authRequired, adminOnly, async (r
     if (!eventId) return res.status(400).json({ ok: false, error: "BAD_REQUEST", message: "eventId requis." });
 
     const [[ev]] = await pool.query(
-      `SELECT id, order_id AS orderId, status, note, created_at AS createdAt
+      `SELECT id, order_id AS orderId, status, message AS note, created_at AS createdAt
        FROM tracking_events WHERE id = ? LIMIT 1`,
       [eventId]
     );
     if (!ev) return res.status(404).json({ ok: false, error: "EVENT_NOT_FOUND" });
 
-    await pool.query(`UPDATE tracking_events SET note = ? WHERE id = ?`, [note, eventId]);
+    await pool.query(`UPDATE tracking_events SET message = ? WHERE id = ?`, [note, eventId]);
 
     const [rows] = await pool.query(
-      `SELECT id, order_id AS orderId, status, note, created_at AS createdAt
+      `SELECT id, order_id AS orderId, status, message AS note, created_at AS createdAt
        FROM tracking_events WHERE id = ? LIMIT 1`,
       [eventId]
     );

@@ -335,7 +335,7 @@ router.patch('/orders/:id/status', async (req, res) => {
     // Créer un tracking event si orderStatus change
     if (orderStatus) {
       await conn.query(
-        `INSERT INTO tracking_events (id, order_id, status, note, created_at) VALUES (UUID(), ?, ?, ?, NOW())`,
+        `INSERT INTO tracking_events (id, order_id, status, message, created_at) VALUES (UUID(), ?, ?, ?, NOW())`,
         [id, orderStatus, note || null]
       );
     }
