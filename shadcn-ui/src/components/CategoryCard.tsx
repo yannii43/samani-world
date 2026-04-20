@@ -10,7 +10,7 @@ export default function CategoryCard({ category }: CategoryCardProps) {
   return (
     <Link to={`/category/${category.slug}`} className="group">
       <Card className="overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 hover-lift">
-        <div className="relative aspect-square overflow-hidden">
+        <div className="relative overflow-hidden" style={{ height: '220px' }}>
           <img
             src={category.image}
             alt={category.name}

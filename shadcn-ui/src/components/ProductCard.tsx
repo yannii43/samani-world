@@ -18,7 +18,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   return (
     <Link to={`/product/${product.slug}`} className="group">
       <Card className="overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 hover-lift">
-        <div className="relative aspect-[3/4] overflow-hidden bg-gray-100">
+        <div className="relative overflow-hidden bg-gray-100" style={{ height: '280px' }}>
           <img
             src={product.coverImage || '/assets/placeholder.jpg'}
             alt={product.name}

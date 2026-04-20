@@ -22,7 +22,7 @@ export default function Index() {
       </Helmet>
 
       {/* Hero Section */}
-      <section className="relative h-[600px] bg-black overflow-hidden">
+      <section className="relative bg-black overflow-hidden" style={{ height: '600px' }}>
         <div className="absolute inset-0">
           <img
             src="/assets/hero-sanii-world.jpg"
