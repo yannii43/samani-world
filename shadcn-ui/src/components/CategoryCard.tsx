@@ -14,7 +14,8 @@ export default function CategoryCard({ category }: CategoryCardProps) {
           <img
             src={category.image}
             alt={category.name}
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+            className="group-hover:scale-110 transition-transform duration-500"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 p-6">

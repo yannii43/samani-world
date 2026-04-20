@@ -27,7 +27,7 @@ export default function Index() {
           <img
             src="/assets/hero-sanii-world.jpg"
             alt="Collection de mode féminine Samani World — robes et abayas élégantes à Dakar"
-            className="w-full h-full object-cover opacity-60"
+            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.6 }}
           />
           <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-transparent" />
         </div>
