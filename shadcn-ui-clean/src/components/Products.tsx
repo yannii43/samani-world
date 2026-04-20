@@ -52,8 +52,7 @@ export default function Products({
   const [products, setProducts] = useState<Product[]>([]);
 
   const apiUrl = useMemo(() => {
-    const apiBase = import.meta.env.VITE_API_URL || '';
-    const url = new URL(`/api/products`, apiBase || window.location.origin);
+    const url = new URL(`/api/products`, window.location.origin);
     url.searchParams.set("limit", String(limit));
     url.searchParams.set("offset", String(offset));
 

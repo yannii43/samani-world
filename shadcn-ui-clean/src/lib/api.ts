@@ -6,12 +6,10 @@ export type ApiError = {
   body?: any;
 };
 
-const API_BASE = import.meta.env.VITE_API_URL || ""; // "" = proxy Vite en dev
-
 function joinApi(path: string) {
   if (!path.startsWith("/")) path = `/${path}`;
-  if (path.startsWith("/api/")) return `${API_BASE}${path}`;
-  return `${API_BASE}/api${path}`;
+  if (path.startsWith("/api/")) return path;
+  return `/api${path}`;
 }
 
 export async function apiGet<T>(path: string): Promise<T> {
