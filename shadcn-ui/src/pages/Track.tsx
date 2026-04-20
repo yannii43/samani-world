@@ -55,7 +55,7 @@ export default function Track() {
 
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:4000/api/track", {
+      const res = await fetch("/api/track", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ orderNumber: on, phone: ph }),

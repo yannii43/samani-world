@@ -26,7 +26,7 @@ function fmt(n: number) { return n.toLocaleString('fr-FR') + ' FCFA'; }
 function resolveImage(src?: string | null) {
   if (!src) return '/assets/placeholder.jpg';
   if (src.startsWith('http') || src.startsWith('/assets') || src.startsWith('/images')) return src;
-  if (src.startsWith('/uploads')) return `http://localhost:4000${src}`;
+  if (src.startsWith('/uploads')) return `${src}`;
   return src;
 }
 

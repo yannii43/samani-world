@@ -1,6 +1,5 @@
 // shadcn-ui/src/lib/orders-api.ts
-export const API_URL =
-  (import.meta as any).env?.VITE_API_URL || "http://localhost:4000";
+export const API_URL = '';
 
 export type CreateOrderItem = {
   productId: string;

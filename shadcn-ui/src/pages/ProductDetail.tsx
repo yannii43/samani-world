@@ -47,7 +47,7 @@ type VariantsResponse =
 function resolveImage(src?: string | null) {
   if (!src) return "/assets/placeholder.jpg";
   if (src.startsWith("http")) return src;
-  if (src.startsWith("/uploads")) return `http://localhost:4000${src}`;
+  if (src.startsWith("/uploads")) return `${src}`;
   return src; // ex: /assets/...
 }
 

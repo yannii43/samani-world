@@ -62,7 +62,7 @@ export default function ImageUpload({ value, onChange, label, hint }: ImageUploa
         /* Aperçu de l'image */
         <div className="relative inline-block">
           <img
-            src={value.startsWith('/uploads') ? `http://localhost:4000${value}` : value}
+            src={value.startsWith('/uploads') ? `${value}` : value}
             alt="aperçu"
             className="h-32 w-32 object-cover rounded-lg border border-gray-200"
           />
