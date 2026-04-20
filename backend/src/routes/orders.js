@@ -92,9 +92,8 @@ router.get("/orders/:id", async (req, res) => {
         variant_id AS variantId,
         quantity,
         price AS unitPrice,
-        product_name AS productName,
-        variant_details AS variantDetails,
-        cover_image AS coverImage
+        name AS productName,
+        options AS variantDetails
       FROM order_items
       WHERE order_id = ?
       ORDER BY id ASC`,
@@ -277,12 +276,10 @@ router.post("/orders", async (req, res) => {
         subtotal,
         discount,
         total,
-        payment_method,
         payment_status,
         order_status,
-        coupon_code,
         notes
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         orderId,
         orderNumber,
@@ -295,10 +292,8 @@ router.post("/orders", async (req, res) => {
         subtotal,
         discount,
         total,
-        paymentMethod,
         "pending",
         "confirmed",
-        null,
         notes || null,
       ]
     );
@@ -313,10 +308,9 @@ router.post("/orders", async (req, res) => {
           variant_id,
           quantity,
           price,
-          product_name,
-          variant_details,
-          cover_image
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          name,
+          options
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           crypto.randomUUID(),
           orderId,
@@ -326,14 +320,13 @@ router.post("/orders", async (req, res) => {
           it.unitPrice,
           it.productName,
           it.variantDetails,
-          it.coverImage,
         ]
       );
     }
 
     // ✅ 4) Auto tracking event: confirmed
     await conn.query(
-      `INSERT INTO tracking_events (id, order_id, status, note, created_at)
+      `INSERT INTO tracking_events (id, order_id, status, message, created_at)
        VALUES (UUID(), ?, 'confirmed', 'Commande confirmée', NOW())`,
       [orderId]
     );

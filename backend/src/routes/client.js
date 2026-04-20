@@ -49,6 +49,32 @@ router.get('/coupons/validate', async (req, res) => {
   }
 });
 
+// ── MES COMMANDES (client connecté) ──────────────────────────────────────────
+
+// GET /api/my/orders
+router.get('/my/orders', authRequired, async (req, res) => {
+  try {
+    const [orders] = await pool.query(
+      `SELECT
+        id,
+        order_number AS orderNumber,
+        total,
+        order_status AS orderStatus,
+        payment_status AS paymentStatus,
+        created_at AS createdAt,
+        shipping_method AS shippingMethod
+       FROM orders
+       WHERE customer_email = ?
+       ORDER BY created_at DESC
+       LIMIT 50`,
+      [req.user.email]
+    );
+    return res.json({ ok: true, orders });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: 'DB_ERROR', message: err?.message });
+  }
+});
+
 // ── WISHLIST (client connecté) ────────────────────────────────────────────────
 
 // GET /api/wishlist

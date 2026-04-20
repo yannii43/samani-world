@@ -177,23 +177,21 @@ export default function ProductDetail() {
 
   const cover = useMemo(() => {
     if (!product) return null;
-    return product.image || product.imageUrl || product.cover_image || null;
+    return (product as any).coverImage || product.image || product.imageUrl || product.cover_image || null;
   }, [product]);
 
   const gallery = useMemo(() => {
     const imgs: string[] = [];
 
-    // images[] si existe
-    if (product?.images && Array.isArray(product.images)) {
-      imgs.push(...product.images.filter(Boolean));
+    const gallerySrc = (product as any)?.gallery || product?.images;
+    if (gallerySrc && Array.isArray(gallerySrc)) {
+      imgs.push(...gallerySrc.filter(Boolean));
     }
 
-    // sinon cover en fallback
     if (cover) imgs.unshift(cover);
 
-    // unique
     return Array.from(new Set(imgs));
-  }, [product?.images, cover]);
+  }, [product, cover]);
 
   const price = useMemo(() => {
     if (!product) return 0;
